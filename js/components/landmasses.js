@@ -46,7 +46,11 @@ export const createCircles = (density, r) => {
             for (let longitude of rangeIterator(-Math.PI, Math.PI, longStep)) {
                 console.log("things");
                 const circleMesh = circleConstructor();
-                circleMesh.rotation.set(0, longitude, 0);
+                // TODO(amartinez): For the life of me I can't yet figure out how to rotate
+                // each circle so that it's tangential to the sphere. This is good enough for now,
+                // but a principled way of computing this would be lovely!
+                const xrotationFactor = -Math.PI/2 <= longitude && longitude <= Math.PI/2 ? -1 : 1;
+                circleMesh.rotation.set(xrotationFactor * (Math.PI/2 - latitude), longitude, 0);
                 circleMesh.position.setFromSphericalCoords(r, latitude, longitude);
                 row.push(circleMesh);
             }
