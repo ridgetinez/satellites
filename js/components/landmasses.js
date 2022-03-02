@@ -1,29 +1,13 @@
-import { CircleGeometry, MeshStandardMaterial, Mesh, DoubleSide, Spherical } from "../../node_modules/three/build/three.module.js";
+import { CircleGeometry, MeshStandardMaterial, MeshBasicMaterial, Mesh, DoubleSide, SphereGeometry } from "../../node_modules/three/build/three.module.js";
 
 // TODO: Compare Instanced Mesh creation and mesh per circle creation
 
 const circleConstructor = () => {
-    const geometry = new CircleGeometry(0.01,32);
-    const material = new MeshStandardMaterial({ color: 0xeabdef });
-    const mesh = new Mesh(geometry, material)
+    const geometry = new CircleGeometry(0.005,5);
+    const material = new MeshBasicMaterial({ color: 0x635fd4 });
+    const mesh = new Mesh(geometry, material);
     mesh.material.side = DoubleSide;
     return mesh;
-}
-
-const circleRow = (density, baseRadius, r, phi) => {
-    const circumference = 2*Math.PI*r;
-    const nCircles = Math.floor(circumference * density);
-    const theta = 2*Math.PI / nCircles;
-
-    const circles = [...Array(nCircles).keys()]
-        .map(circleConstructor());
-    circles.forEach((circleMesh, index) => {
-        const t = theta * index;
-        // find normal to rotate x
-        circleMesh.rotation.set(0, t, 0);
-        circleMesh.position.setFromSphericalCoords(baseRadius, phi, t);
-    });
-    return circles;
 }
 
 function *rangeIterator(start, end, step) {
@@ -32,8 +16,14 @@ function *rangeIterator(start, end, step) {
     }
 }
 
+export const createOceanWorld = (r) => {
+    const geometry = new SphereGeometry(r, 128);
+    const material = new MeshStandardMaterial({ color: 0x2D338E });
+    return new Mesh(geometry, material);
+}
+
 export const createCircles = (density, r) => {
-    const nrows = 25;
+    const nrows = 200;
     // const theta = Math.PI/2/nrows;
     const latStep = Math.PI/nrows;
     let circles = []

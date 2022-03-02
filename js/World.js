@@ -1,5 +1,5 @@
 import { createCamera } from './components/camera.js';
-import { createCircles } from './components/landmasses.js';
+import { createCircles, createOceanWorld } from './components/landmasses.js';
 import { createLights } from './components/lights.js';
 import { createScene } from './components/scene.js';
 
@@ -25,8 +25,9 @@ class World {
     controls.update();
     controls.addEventListener('change', this.render);
 
-    // 10 circles arranged in a ring, a radius of three from (0,0,0)
-    createCircles(10,2).forEach((circle) => scene.add(circle));
+    const earthRadius = 2 
+    scene.add(createOceanWorld(earthRadius));
+    createCircles(10,earthRadius).forEach((circle) => scene.add(circle));
     createLights().forEach((light) => scene.add(light));
 
     const resizer = new Resizer(container, camera, renderer);
