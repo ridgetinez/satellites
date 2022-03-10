@@ -6,11 +6,14 @@ import { createScene } from './components/scene.js';
 import { createRenderer } from './systems/renderer.js';
 import { Resizer } from './systems/resizer.js';
 
-import { OrbitControls } from "../node_modules/three/examples/jsm/controls/OrbitControls.js"
+import { OrbitControls } from "../node_modules/three/examples/jsm/controls/OrbitControls.js";
+import Stats from "../node_modules/three/examples/jsm/libs/stats.module.js"
+// import * as UPNG from '../node_modules/upng-js/UPNG.js';
 
 let scene;
 let camera;
 let renderer;
+let status;
 
 class World {
   constructor(container) {
@@ -25,10 +28,23 @@ class World {
     controls.update();
     controls.addEventListener('change', this.render);
 
-    const earthRadius = 2 
+    // TODO: handle errors
+    fetch("http://localhost:8080/images/worldmap.png")
+      .then(response => response.ok ? response.arrayBuffer() : Promise.reject("request failed"))
+      .then(pngBuffer => {
+        let img = UPNG.decode(pngBuffer);
+        console.log(UPNG.toRGBA8(img));
+        createCircles(30,earthRadius, new Uint8Array(UPNG.toRGBA8(img)[0])).forEach((circle) => scene.add(circle));
+      })
+      .catch(e => console.log(e));
+
+    const earthRadius = 2
     scene.add(createOceanWorld(earthRadius));
-    createCircles(10,earthRadius).forEach((circle) => scene.add(circle));
     createLights().forEach((light) => scene.add(light));
+
+    // add FPS counter
+    status = Stats();
+    document.body.appendChild(status.dom);
 
     const resizer = new Resizer(container, camera, renderer);
   }
@@ -36,6 +52,7 @@ class World {
   render() {
     // draw a single frame
     renderer.render(scene, camera);
+    status.update();
   }
 
 }
