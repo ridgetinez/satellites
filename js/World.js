@@ -8,7 +8,6 @@ import { Resizer } from './systems/resizer.js';
 
 import { OrbitControls } from "../node_modules/three/examples/jsm/controls/OrbitControls.js";
 import Stats from "../node_modules/three/examples/jsm/libs/stats.module.js"
-// import * as UPNG from '../node_modules/upng-js/UPNG.js';
 
 let scene;
 let camera;
@@ -17,8 +16,8 @@ let status;
 
 class World {
   constructor(container) {
-    scene = createScene();
-    renderer = createRenderer();
+    scene = createScene();   
+    renderer = createRenderer();   
     camera = createCamera();
     container.append(renderer.domElement);
 
@@ -29,16 +28,16 @@ class World {
     controls.addEventListener('change', this.render);
 
     // TODO: handle errors
+    const earthRadius = 1.5
     fetch("http://localhost:8080/images/worldmap.png")
       .then(response => response.ok ? response.arrayBuffer() : Promise.reject("request failed"))
       .then(pngBuffer => {
         let img = UPNG.decode(pngBuffer);
         console.log(UPNG.toRGBA8(img));
-        createCircles(30,earthRadius, new Uint8Array(UPNG.toRGBA8(img)[0])).forEach((circle) => scene.add(circle));
+        // createCircles(31, earthRadius, new Uint8Array(UPNG.toRGBA8(img)[0])).forEach((circle) => scene.add(circle));
+        scene.add(createCircles(31, earthRadius, new Uint8Array(UPNG.toRGBA8(img)[0])));
       })
       .catch(e => console.log(e));
-
-    const earthRadius = 2
     scene.add(createOceanWorld(earthRadius));
     createLights().forEach((light) => scene.add(light));
 
@@ -52,6 +51,7 @@ class World {
   render() {
     // draw a single frame
     renderer.render(scene, camera);
+    console.log(renderer.info.render);
     status.update();
   }
 

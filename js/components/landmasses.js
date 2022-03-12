@@ -1,11 +1,9 @@
-import { CircleGeometry, MeshStandardMaterial, MeshBasicMaterial, Mesh, DoubleSide, SphereGeometry } from "../../node_modules/three/build/three.module.js";
-
-// TODO: Compare Instanced Mesh creation and mesh per circle creation
+import { CircleGeometry, MeshStandardMaterial, MeshBasicMaterial, Mesh, DoubleSide, SphereGeometry, Matrix4, Vector3, InstancedMesh } from "../../node_modules/three/build/three.module.js";
 
 const circleConstructor = () => {
     const geometry = new CircleGeometry(0.005,5);
     const material = new MeshBasicMaterial({ color: 0x635fd4 });
-    const mesh = new Mesh(geometry, material);
+    const mesh = new Mesh(geometry, material); // rotation, position --> 1 circle
     mesh.material.side = DoubleSide;
     return mesh;
 }
@@ -22,11 +20,21 @@ export const createOceanWorld = (r) => {
     return new Mesh(geometry, material);
 }
 
+const instantiateLandMeshes = (transformationMatrices) => {
+    const geometry = new CircleGeometry(0.005,5);
+    const material = new MeshBasicMaterial({ color: 0x635fd4 });
+    const meshGroup = new InstancedMesh(geometry, material, transformationMatrices.length);
+    transformationMatrices.forEach((m,i) => meshGroup.setMatrixAt(i,m));
+    meshGroup.instanceMatrix.needsUpdate = true;
+    return meshGroup;
+}
+
 export const createCircles = (density, r, worldMap) => {
-    const nrows = 300;
+    const nrows = 225;
     // const theta = Math.PI/2/nrows;
     const latStep = Math.PI/nrows;
     let circles = []
+    let matrices = [];
     for (let latitude of rangeIterator(0, Math.PI, latStep)) {
             const rowRadius = r * Math.sin(Math.abs(latitude)); // sin(pi/2 - x) = cos(x)
             const nCircles = Math.round(2*Math.PI*rowRadius * density);
@@ -35,21 +43,34 @@ export const createCircles = (density, r, worldMap) => {
             const row = [];
             for (let longitude of rangeIterator(-Math.PI, Math.PI, longStep)) {
                 if (checkLandMass(latitude, longitude, worldMap)) {
+                    const transformationMatrix = new Matrix4();
                     const circleMesh = circleConstructor();
                     // TODO(amartinez): For the life of me I can't yet figure out how to rotate
                     // each circle so that it's tangential to the sphere. This is good enough for now,
                     // but a principled way of computing this would be lovely!
                     const xrotationFactor = -Math.PI/2 <= longitude && longitude <= Math.PI/2 ? -1 : 1;
+
+                    // applying transformations on matrix instead
+                    transformationMatrix.makeRotationX(xrotationFactor * (Math.PI/2 - latitude));
+                    transformationMatrix.makeRotationY(longitude);
+                    const p = new Vector3();
+                    transformationMatrix.setPosition(p.setFromSphericalCoords(r, latitude, longitude));
+
+                    // Circle mesh already instantiated
                     circleMesh.rotation.set(xrotationFactor * (Math.PI/2 - latitude), longitude, 0);
                     circleMesh.position.setFromSphericalCoords(r, latitude, longitude);
                     row.push(circleMesh);
+                    matrices.push(transformationMatrix);
                 }
             }
-            // console.log(row);
-            // console.log(circles);
             circles = circles.concat(row);
     }
-    return circles;
+
+    // instantiate the meshes
+    console.log(matrices);
+    console.log(`ncircles = ${circles.length}`);
+    return instantiateLandMeshes(matrices);
+    // return circles;
 }
 
 // TODO(amartinez): Can add property based test for this locally
